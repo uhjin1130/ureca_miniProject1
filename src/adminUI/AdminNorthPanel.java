@@ -5,26 +5,38 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class AdminNorthPanel extends JPanel {
+    private static final Color COLOR_BG_WHITE = Color.WHITE;
+    private static final Color COLOR_BG_LIGHT = new Color(250, 250, 250);
+    private static final Color COLOR_BORDER = new Color(210, 210, 210);
+    private static final Color COLOR_TEXT_MAIN = new Color(50, 50, 50);
+    private static final Color COLOR_PRIMARY = new Color(220, 60, 30);
+
+    private static final Font FONT_TITLE = new Font("맑은 고딕", Font.BOLD, 22);
+    private static final Font FONT_BODY = new Font("맑은 고딕", Font.PLAIN, 13);
+
     public AdminNorthPanel() {
         setLayout(new BorderLayout());
-        setBackground(new Color(0xF5, 0xF0, 0xE1)); // 크림 베이지 배경 (BG_COLOR)
+        setBackground(COLOR_BG_WHITE);
         setBorder(new EmptyBorder(20, 20, 10, 20));
 
         JLabel titleLabel = new JLabel("킹오더 관리 대시보드", SwingConstants.LEFT);
-        titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 22));
-        titleLabel.setForeground(new Color(0xC0, 0x39, 0x13)); // 버거킹 레드 적용 (TITLE_COLOR)
+        titleLabel.setFont(FONT_TITLE);
+        titleLabel.setForeground(COLOR_TEXT_MAIN);
         titleLabel.setBorder(new EmptyBorder(0, 0, 16, 0));
         add(titleLabel, BorderLayout.NORTH);
 
-        JPanel cardGrid = new JPanel(new GridLayout(1, 3, 16, 0));
-        cardGrid.setBackground(new Color(0xF5, 0xF0, 0xE1)); // 동일한 크림 베이지 적용
-        
-        Color textColorMain = new Color(0x1A, 0x1A, 0x1A); // 진한 텍스트
-        Color textColorRed = new Color(0xC0, 0x39, 0x13);  // 버거킹 레드
+        orderDAO adminDAO = new orderDAO();
+        int todaySales = adminDAO.getTodaySales();
+        int totalSales = adminDAO.getTotalSales(); // 👈 새로 만든 총매출 메서드 호출!
+        int orderCount = adminDAO.getTodayOrderCount();
 
-        cardGrid.add(buildSummaryCard("오늘의 주문", "12 건", textColorMain));
-        cardGrid.add(buildSummaryCard("오늘의 매출", "48,500 원", textColorRed));
-        cardGrid.add(buildSummaryCard("인기 메뉴", "떡볶이", textColorMain));
+        JPanel cardGrid = new JPanel(new GridLayout(1, 3, 16, 0));
+        cardGrid.setBackground(COLOR_BG_WHITE);
+
+        // ⭐️ [UI 매핑] 기존 가짜 데이터 지우고 진짜 DB 데이터 꽂아넣기!
+        cardGrid.add(buildSummaryCard("오늘의 주문", orderCount + " 건", new Color(70, 120, 230)));
+        cardGrid.add(buildSummaryCard("오늘의 매출", String.format("%,d 원", todaySales), COLOR_PRIMARY));
+        cardGrid.add(buildSummaryCard("누적 총매출", String.format("%,d 원", totalSales), new Color(40, 160, 100))); // 👈 "인기 메뉴" 대신 "누적 총매출"로 변신!
 
         add(cardGrid, BorderLayout.CENTER);
     }

@@ -1,8 +1,8 @@
 package adminUI;
 
-import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import java.awt.*;
 
 public class TotalGraph extends JDialog {
     // 임시 데이터 (나중에 DB연결)
