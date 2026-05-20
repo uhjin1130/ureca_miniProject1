@@ -3,6 +3,11 @@ package adminUI;
 import java.sql.*;
 
 import adminUI.DBUtil; // 네 프로젝트의 DBUtil 패키지 경로에 맞게 확인!
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 
 public class orderDAO {
 
@@ -55,6 +60,41 @@ public class orderDAO {
         }
         return 0;
     }
+
+    public boolean updateOrderStatus(java.util.List<String> orderIds, String newStatus) {
+        if (orderIds == null || orderIds.isEmpty()) return false;
+
+        // SQL 인문을 IN (?, ?, ...) 형태로 동적 생성
+        StringBuilder sql = new StringBuilder("UPDATE orders SET status = ? WHERE order_id IN (");
+        for (int i = 0; i < orderIds.size(); i++) {
+            sql.append("?");
+            if (i < orderIds.size() - 1) sql.append(", ");
+        }
+        sql.append(")");
+
+        try (Connection conn = DBUtil.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            // 1. 첫 번째 파라미터에 변경할 상태 세팅
+            pstmt.setString(1, newStatus);
+            
+            // 2. IN 절에 들어갈 order_id 세팅 (문자열 형태 "#0001"에서 숫자만 추출)
+            for (int i = 0; i < orderIds.size(); i++) {
+                String rawId = orderIds.get(i).replace("#", ""); // "#0003" -> "0003"
+                int id = Integer.parseInt(rawId);                 // "0003" -> 3
+                pstmt.setInt(i + 2, id);
+            }
+
+            int updatedRows = pstmt.executeUpdate();
+            return updatedRows > 0;
+
+        } catch (SQLException e) {
+            System.out.println(">> 주문 상태 업데이트 중 DB 에러!");
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // orderDAO.java 또는 AdminDAO.java 내부에 추가
     public Object[][] getRealtimeOrderList() {
         // properties 방식을 쓴다면: String sql = minni1_2.util.DBUtil.getSQL("getOrderList");
@@ -134,5 +174,32 @@ public class orderDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public int[] getMonthlySalesValues() {
+        int[] monthlySales = new int[12]; // 1월부터 12월까지 저장할 배열 공간 생성
+        
+        String sql = "SELECT MONTH(order_time) AS month, SUM(total_price) AS sales " +
+                    "FROM orders " +
+                    "WHERE status = 'COMPLETED' AND YEAR(order_time) = YEAR(CURDATE()) " +
+                    "GROUP BY MONTH(order_time)";
+                    
+        try (Connection conn = DBUtil.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                int month = rs.getInt("month"); // DB에서 추출한 월 (1 ~ 12)
+                int sales = rs.getInt("sales"); // 해당 월의 매출 합계
+                
+                // 자바 배열은 0부터 시작하므로 [월 - 1] 인덱스에 매핑하여 저장합니다.
+                monthlySales[month - 1] = sales; 
+            }
+        } catch (SQLException e) {
+            System.out.println(">> 월별 매출 통계 조회 중 DB 에러 발생!");
+            e.printStackTrace();
+        }
+        
+        return monthlySales;
     }
 }

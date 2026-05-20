@@ -268,7 +268,7 @@ public class OrderPanel extends JPanel {
         content.setBackground(BG_COLOR);
         content.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        JLabel shopName = new JLabel("🍔  BURGER KING", SwingConstants.CENTER);
+        JLabel shopName = new JLabel("BURGER KING", SwingConstants.CENTER);
         shopName.setFont(new Font("맑은 고딕", Font.BOLD, 18));
         shopName.setForeground(PRICE_COLOR);
         shopName.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -322,7 +322,7 @@ public class OrderPanel extends JPanel {
 
         JButton confirmBtn = new JButton("주문하시겠습니까?");
         confirmBtn.setFont(new Font("맑은 고딕", Font.BOLD, 14));
-        confirmBtn.setForeground(Color.WHITE);
+        confirmBtn.setForeground(Color.BLACK);
         confirmBtn.setBackground(ORDER_BTN_BG);
         confirmBtn.setFocusPainted(false);
         confirmBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
