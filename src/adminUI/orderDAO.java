@@ -108,7 +108,7 @@ public class orderDAO {
         String deleteOrderSQL = "DELETE FROM orders WHERE order_id = ?";
 
         // 본인의 DB 연결 코드 방식에 맞춰 Connection을 가져오세요 (예: DBUtil.getConnection())
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "0000")) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "root")) {
 
             // 트랜잭션 시작: 두 쿼리가 모두 성공해야만 DB에 반영되도록 설정
             conn.setAutoCommit(false);

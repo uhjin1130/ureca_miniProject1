@@ -7,7 +7,7 @@ import java.util.List;
 public class MenuDAO {
 	private final String URL      = "jdbc:mysql://localhost:3306/kingorder";
     private final String USER     = "root";
-    private final String PASSWORD = "0000";
+    private final String PASSWORD = "root";
     //private final String PASSWORD = "111111";
 
     public List<MenuDTO> getAllMenus() {
