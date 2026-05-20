@@ -202,4 +202,33 @@ public class orderDAO {
         
         return monthlySales;
     }
+
+
+    // ⭐️ [추가] 오늘 자 시간별(0시~23시) 매출 통계 그래프 데이터 가져오기
+    public int[] getHourlySalesValues() {
+        int[] hourlySales = new int[24]; // 0시부터 23시까지 저장할 24칸짜리 배열
+
+        // 오늘(CURDATE) 완료된 주문들을 시간(HOUR)대별로 그룹화하여 합산하는 SQL
+        String sql = "SELECT HOUR(order_time) AS hour, SUM(total_price) AS sales " +
+                "FROM orders " +
+                "WHERE status = 'COMPLETED' AND DATE(order_time) = CURDATE() " +
+                "GROUP BY HOUR(order_time)";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int hour = rs.getInt("hour");   // DB에서 추출한 시간 (0 ~ 23)
+                int sales = rs.getInt("sales"); // 해당 시간의 매출 합계
+
+                hourlySales[hour] = sales; // 시간 자체가 배열의 인덱스(0~23)가 됩니다.
+            }
+        } catch (SQLException e) {
+            System.out.println(">> 시간별 매출 통계 조회 중 DB 에러 발생!");
+            e.printStackTrace();
+        }
+
+        return hourlySales;
+    }
 }
