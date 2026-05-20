@@ -130,14 +130,15 @@ public class OrderManagement extends JPanel {
                     String numericOrderId = rawOrderId.replaceAll("[^0-9]", "");
                     long orderId = Long.parseLong(numericOrderId);
 
-                    dao.deleteOrder(orderId);
-                    tableModel.removeRow(i);
+                    // dao.deleteOrder(orderId);
+                    // tableModel.removeRow(i);
                 }
             }
 
             if (!isCheckedAny) {
                 JOptionPane.showMessageDialog(this, "취소할 주문을 먼저 체크박스에서 선택해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
             } else {
+                processStatusChange(table, tableModel, "CANCELED");
                 JOptionPane.showMessageDialog(this, "선택하신 주문이 취소 되었습니다.", "완료", JOptionPane.INFORMATION_MESSAGE);
 
                 // 취소 시 상단 패널도 갱신
@@ -191,8 +192,6 @@ public class OrderManagement extends JPanel {
                 // 2. 테이블 컬럼 사이즈 및 중앙 정렬 재세팅
                 table.getColumnModel().getColumn(0).setPreferredWidth(40);
                 table.getColumnModel().getColumn(0).setMaxWidth(40);
-                table.getColumnModel().getColumn(1).setPreferredWidth(70);
-                table.getColumnModel().getColumn(1).setMaxWidth(70);
 
                 DefaultTableCellRenderer autoCenterRenderer = new DefaultTableCellRenderer();
                 autoCenterRenderer.setHorizontalAlignment(SwingConstants.CENTER);
@@ -248,7 +247,7 @@ public class OrderManagement extends JPanel {
             table.getColumnModel().getColumn(0).setPreferredWidth(40);
             table.getColumnModel().getColumn(0).setMaxWidth(40);
 
-            
+
             DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
             centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
             for(int i = 1; i < table.getColumnCount(); i++) {
