@@ -395,7 +395,7 @@ public class OrderPanel extends JPanel {
 
         JButton closeBtn = new JButton("확인");
         closeBtn.setFont(new Font("맑은 고딕", Font.BOLD, 14));
-        closeBtn.setForeground(Color.WHITE);
+        closeBtn.setForeground(Color.BLACK);
         closeBtn.setBackground(ORDER_BTN_BG);
         closeBtn.setFocusPainted(false);
         closeBtn.setMaximumSize(new Dimension(200, 44));

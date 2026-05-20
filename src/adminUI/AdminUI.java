@@ -6,7 +6,7 @@ import javax.swing.*;
 public class AdminUI extends JFrame {
     public AdminUI() {
         setTitle("킹오더 관리자 시스템");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(850, 700);
         setMinimumSize(new Dimension(750, 600));
         setLocationRelativeTo(null);

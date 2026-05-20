@@ -1,5 +1,6 @@
 package adminUI;
 
+import javax.swing.Timer;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,6 +15,7 @@ public class OrderManagement extends JPanel {
 
     private static final Font FONT_SUBTITLE = new Font("맑은 고딕", Font.BOLD, 14);
     private static final Font FONT_BODY = new Font("맑은 고딕", Font.PLAIN, 13);
+
 
     public OrderManagement() {
         setLayout(new BorderLayout());
@@ -56,6 +58,7 @@ public class OrderManagement extends JPanel {
                 }
                 return String.class;
             }
+
 
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -113,6 +116,7 @@ public class OrderManagement extends JPanel {
         JButton btnComplete = makeStyledButton("조리 완료", btnBg, btnFg);
         JButton btnCancel = makeStyledButton("주문 취소", btnBg, btnFg);
         JButton btnTotal = makeStyledButton("총매출", btnBg, btnFg);
+
         btnCancel.addActionListener(e -> {
             boolean isCheckedAny = false;
 
@@ -120,31 +124,35 @@ public class OrderManagement extends JPanel {
             for (int i = tableModel.getRowCount() - 1; i >= 0; i--) {
                 Boolean isChecked = (Boolean) tableModel.getValueAt(i, 0);
 
-                // 체크박스가 선택된 상태라면
                 if (isChecked != null && isChecked) {
                     isCheckedAny = true;
 
-                    // 1. 주문 번호 가져오기 (1번 열)
-                    // #으로 되어있어서 숫자만 남기는것으로 수정함 주문번호에 # 빼는것도 고안
                     String rawOrderId = tableModel.getValueAt(i, 1).toString();
-                    String numericOrderId = rawOrderId.replaceAll("[^0-9]", ""); // 숫자만 남기기
+                    String numericOrderId = rawOrderId.replaceAll("[^0-9]", "");
                     long orderId = Long.parseLong(numericOrderId);
 
-                    // 2. DB에서 완전 삭제 (DAO 메서드 호출)
                     dao.deleteOrder(orderId);
-
-                    // 3. 화면(테이블)에서 해당 줄 즉시 삭제
                     tableModel.removeRow(i);
                 }
             }
 
-            // 아무것도 선택하지 않고 눌렀을 때의 방어 로직
             if (!isCheckedAny) {
                 JOptionPane.showMessageDialog(this, "취소할 주문을 먼저 체크박스에서 선택해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "선택하신 주문이 취소( 되었습니다.", "완료", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "선택하신 주문이 취소 되었습니다.", "완료", JOptionPane.INFORMATION_MESSAGE);
+
+                // 취소 시 상단 패널도 갱신
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+                if (topFrame != null) {
+                    topFrame.getContentPane().removeAll();
+                    topFrame.add(new AdminNorthPanel(), BorderLayout.NORTH);
+                    topFrame.add(this, BorderLayout.CENTER);
+                    topFrame.revalidate();
+                    topFrame.repaint();
+                }
             }
         });
+
         btnApprove.addActionListener(e -> processStatusChange(table, tableModel, "COOKING"));
         btnComplete.addActionListener(e -> processStatusChange(table, tableModel, "COMPLETED"));
 
@@ -152,18 +160,63 @@ public class OrderManagement extends JPanel {
             JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
             new TotalGraph(parent).setVisible(true);
         });
+
         btnPanel.add(btnApprove);
         btnPanel.add(btnComplete);
         btnPanel.add(btnCancel);
         btnPanel.add(btnTotal);
 
         add(btnPanel, BorderLayout.SOUTH);
+
+        // 🚀 [스마트 실시간 타이머 추가됨] 화면 껌뻑임, 알림창 방해 완벽 차단 버전!
+        new Timer(2000, e -> {
+            orderDAO autoDao = new orderDAO();
+            Object[][] newDbData = autoDao.getRealtimeOrderList();
+
+            // ⭐️ DB 주문 건수와 화면 주문 건수가 "다를 때(새 주문이 들어왔을 때)"만 화면을 업데이트함!
+            if (tableModel.getRowCount() != newDbData.length) {
+
+                Object[][] newFinalData = new Object[newDbData.length][6];
+                for (int i = 0; i < newDbData.length; i++) {
+                    newFinalData[i][0] = Boolean.FALSE;
+                    newFinalData[i][1] = newDbData[i][0];
+                    newFinalData[i][2] = newDbData[i][1];
+                    newFinalData[i][3] = newDbData[i][2];
+                    newFinalData[i][4] = newDbData[i][3];
+                    newFinalData[i][5] = newDbData[i][4];
+                }
+
+                // 1. 테이블 데이터 덮어쓰기
+                tableModel.setDataVector(newFinalData, new String[]{"선택", "주문 번호", "주문 시간", "상세 내역", "총 결제 금액", "상태"});
+
+                // 2. 테이블 컬럼 사이즈 및 중앙 정렬 재세팅
+                table.getColumnModel().getColumn(0).setPreferredWidth(40);
+                table.getColumnModel().getColumn(0).setMaxWidth(40);
+                table.getColumnModel().getColumn(1).setPreferredWidth(70);
+                table.getColumnModel().getColumn(1).setMaxWidth(70);
+
+                DefaultTableCellRenderer autoCenterRenderer = new DefaultTableCellRenderer();
+                autoCenterRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+                for(int i = 1; i < table.getColumnCount(); i++) {
+                    table.getColumnModel().getColumn(i).setCellRenderer(autoCenterRenderer);
+                }
+
+                // 3. 새 주문이 들어왔으니 상단의 총매출, 주문 건수 카드(AdminNorthPanel)도 같이 갱신!
+                JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+                if (topFrame != null) {
+                    topFrame.getContentPane().removeAll();
+                    topFrame.add(new AdminNorthPanel(), BorderLayout.NORTH);
+                    topFrame.add(this, BorderLayout.CENTER);
+                    topFrame.revalidate();
+                    topFrame.repaint();
+                }
+            }
+        }).start(); // 생성자 끝날 때 무한 동력 가동!
     }
 
     private void processStatusChange(JTable table, DefaultTableModel tableModel, String targetStatus) {
         java.util.List<String> selectedOrderIds = new java.util.ArrayList<>();
-        
-        // 테이블을 돌며 체크박스(0번 열)가 true인 주문 번호(1번 열) 수집
+
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             Boolean isChecked = (Boolean) tableModel.getValueAt(i, 0);
             if (isChecked != null && isChecked) {
@@ -172,18 +225,15 @@ public class OrderManagement extends JPanel {
             }
         }
 
-        // 선택된 항목이 없을 때 예외 처리
         if (selectedOrderIds.isEmpty()) {
             JOptionPane.showMessageDialog(this, "상태를 변경할 주문을 선택해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // DB 업데이트 진행
         orderDAO dao = new orderDAO();
         boolean success = dao.updateOrderStatus(selectedOrderIds, targetStatus);
 
         if (success) {
-            // ⭐️ [UI 갱신] 1. 테이블 데이터 DB에서 다시 불러와서 재세팅
             Object[][] dbData = dao.getRealtimeOrderList();
             Object[][] finalData = new Object[dbData.length][6];
             for (int i = 0; i < dbData.length; i++) {
@@ -195,20 +245,18 @@ public class OrderManagement extends JPanel {
                 finalData[i][5] = dbData[i][4];
             }
             tableModel.setDataVector(finalData, new String[]{"선택", "주문 번호", "주문 시간", "상세 내역", "총 결제 금액", "상태"});
-            
-            // 테이블 속성 재설정 (setDataVector 사용 시 컬럼 너비 및 정렬이 초기화되므로 다시 적용)
+
             table.getColumnModel().getColumn(0).setPreferredWidth(40);
             table.getColumnModel().getColumn(0).setMaxWidth(40);
             table.getColumnModel().getColumn(1).setPreferredWidth(70);
             table.getColumnModel().getColumn(1).setMaxWidth(70);
-            
+
             DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
             centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
             for(int i = 1; i < table.getColumnCount(); i++) {
                 table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             }
 
-            // ⭐️ [UI 갱신] 2. 상단 대시보드 카드(AdminNorthPanel) 금액 및 건수 동시 갱신
             JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             if (topFrame != null) {
                 topFrame.getContentPane().removeAll();
@@ -227,7 +275,7 @@ public class OrderManagement extends JPanel {
         btn.setFont(FONT_SUBTITLE);
         btn.setBackground(bg);
         btn.setForeground(fg);
-        btn.setBorder(BorderFactory.createLineBorder(COLOR_BORDER)); // 골드 테두리 추가
+        btn.setBorder(BorderFactory.createLineBorder(COLOR_BORDER));
         btn.setFocusPainted(false);
         btn.setPreferredSize(new Dimension(110, 38));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
