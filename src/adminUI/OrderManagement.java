@@ -108,16 +108,54 @@ public class OrderManagement extends JPanel {
         Color btnBg = new Color(0xF0, 0xE8, 0xD0); // 소형 버튼 배경 (BTN_BG)
         Color btnFg = new Color(0xC0, 0x39, 0x13); // 버튼 텍스트 (버거킹 레드)
 
+        // 버튼들을 변수로 분리하여 이벤트를 달 수 있게 만듭니다.
+        JButton btnApprove = makeStyledButton("주문 승인", btnBg, btnFg);
+        JButton btnComplete = makeStyledButton("조리 완료", btnBg, btnFg);
+        JButton btnCancel = makeStyledButton("주문 취소", btnBg, btnFg);
         JButton btnTotal = makeStyledButton("총매출", btnBg, btnFg);
-        btnPanel.add(makeStyledButton("주문 승인", btnBg, btnFg));
-        btnPanel.add(makeStyledButton("조리 완료", btnBg, btnFg));
-        btnPanel.add(makeStyledButton("주문 취소", btnBg, btnFg));
+
+        btnCancel.addActionListener(e -> {
+            boolean isCheckedAny = false;
+
+            // ⚠️ 중요: 테이블 행을 삭제할 때는 반드시 맨 아래쪽(끝)부터 거꾸로 올라와야 인덱스가 꼬이지 않습니다!
+            for (int i = tableModel.getRowCount() - 1; i >= 0; i--) {
+                Boolean isChecked = (Boolean) tableModel.getValueAt(i, 0);
+
+                // 체크박스가 선택된 상태라면
+                if (isChecked != null && isChecked) {
+                    isCheckedAny = true;
+
+                    // 1. 주문 번호 가져오기 (1번 열)
+                    // #으로 되어있어서 숫자만 남기는것으로 수정함 주문번호에 # 빼는것도 고안
+                    String rawOrderId = tableModel.getValueAt(i, 1).toString();
+                    String numericOrderId = rawOrderId.replaceAll("[^0-9]", ""); // 숫자만 남기기
+                    long orderId = Long.parseLong(numericOrderId);
+
+                    // 2. DB에서 완전 삭제 (DAO 메서드 호출)
+                    dao.deleteOrder(orderId);
+
+                    // 3. 화면(테이블)에서 해당 줄 즉시 삭제
+                    tableModel.removeRow(i);
+                }
+            }
+
+            // 아무것도 선택하지 않고 눌렀을 때의 방어 로직
+            if (!isCheckedAny) {
+                JOptionPane.showMessageDialog(this, "취소할 주문을 먼저 체크박스에서 선택해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "선택하신 주문이 취소( 되었습니다.", "완료", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
 
         btnTotal.addActionListener(e -> {
             JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
             new TotalGraph(parent).setVisible(true);
         });
+        btnPanel.add(btnApprove);
+        btnPanel.add(btnComplete);
+        btnPanel.add(btnCancel);
         btnPanel.add(btnTotal);
+
         add(btnPanel, BorderLayout.SOUTH);
     }
 

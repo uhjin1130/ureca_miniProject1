@@ -34,7 +34,7 @@ public class AdminNorthPanel extends JPanel {
         cardGrid.setBackground(COLOR_BG_WHITE);
 
         // ⭐️ [UI 매핑] 기존 가짜 데이터 지우고 진짜 DB 데이터 꽂아넣기!
-        cardGrid.add(buildSummaryCard("오늘의 주문", orderCount + " 건", new Color(70, 120, 230)));
+        cardGrid.add(buildSummaryCard("오늘의 주문", orderCount + " 개", new Color(70, 120, 230)));
         cardGrid.add(buildSummaryCard("오늘의 매출", String.format("%,d 원", todaySales), COLOR_PRIMARY));
         cardGrid.add(buildSummaryCard("누적 총매출", String.format("%,d 원", totalSales), new Color(40, 160, 100))); // 👈 "인기 메뉴" 대신 "누적 총매출"로 변신!
 
