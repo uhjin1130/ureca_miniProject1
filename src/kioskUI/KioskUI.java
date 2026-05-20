@@ -25,7 +25,7 @@ public class KioskUI extends JFrame {
             orderPanel.buildReceiptDialog(this).setVisible(true)
         );
 
-        // ── 패널 배치 ────────────────────────────────────────────
+        // ── 패널 배치 ──────────────────────────────────────────
         add(menuPanel,  BorderLayout.CENTER);
         add(orderPanel, BorderLayout.SOUTH);
 
