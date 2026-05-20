@@ -113,7 +113,6 @@ public class OrderManagement extends JPanel {
         JButton btnComplete = makeStyledButton("조리 완료", btnBg, btnFg);
         JButton btnCancel = makeStyledButton("주문 취소", btnBg, btnFg);
         JButton btnTotal = makeStyledButton("총매출", btnBg, btnFg);
-
         btnCancel.addActionListener(e -> {
             boolean isCheckedAny = false;
 
@@ -146,6 +145,8 @@ public class OrderManagement extends JPanel {
                 JOptionPane.showMessageDialog(this, "선택하신 주문이 취소( 되었습니다.", "완료", JOptionPane.INFORMATION_MESSAGE);
             }
         });
+        btnApprove.addActionListener(e -> processStatusChange(table, tableModel, "COOKING"));
+        btnComplete.addActionListener(e -> processStatusChange(table, tableModel, "COMPLETED"));
 
         btnTotal.addActionListener(e -> {
             JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -157,6 +158,68 @@ public class OrderManagement extends JPanel {
         btnPanel.add(btnTotal);
 
         add(btnPanel, BorderLayout.SOUTH);
+    }
+
+    private void processStatusChange(JTable table, DefaultTableModel tableModel, String targetStatus) {
+        java.util.List<String> selectedOrderIds = new java.util.ArrayList<>();
+        
+        // 테이블을 돌며 체크박스(0번 열)가 true인 주문 번호(1번 열) 수집
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            Boolean isChecked = (Boolean) tableModel.getValueAt(i, 0);
+            if (isChecked != null && isChecked) {
+                String orderId = (String) tableModel.getValueAt(i, 1);
+                selectedOrderIds.add(orderId);
+            }
+        }
+
+        // 선택된 항목이 없을 때 예외 처리
+        if (selectedOrderIds.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "상태를 변경할 주문을 선택해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // DB 업데이트 진행
+        orderDAO dao = new orderDAO();
+        boolean success = dao.updateOrderStatus(selectedOrderIds, targetStatus);
+
+        if (success) {
+            // ⭐️ [UI 갱신] 1. 테이블 데이터 DB에서 다시 불러와서 재세팅
+            Object[][] dbData = dao.getRealtimeOrderList();
+            Object[][] finalData = new Object[dbData.length][6];
+            for (int i = 0; i < dbData.length; i++) {
+                finalData[i][0] = Boolean.FALSE;
+                finalData[i][1] = dbData[i][0];
+                finalData[i][2] = dbData[i][1];
+                finalData[i][3] = dbData[i][2];
+                finalData[i][4] = dbData[i][3];
+                finalData[i][5] = dbData[i][4];
+            }
+            tableModel.setDataVector(finalData, new String[]{"선택", "주문 번호", "주문 시간", "상세 내역", "총 결제 금액", "상태"});
+            
+            // 테이블 속성 재설정 (setDataVector 사용 시 컬럼 너비 및 정렬이 초기화되므로 다시 적용)
+            table.getColumnModel().getColumn(0).setPreferredWidth(40);
+            table.getColumnModel().getColumn(0).setMaxWidth(40);
+            table.getColumnModel().getColumn(1).setPreferredWidth(70);
+            table.getColumnModel().getColumn(1).setMaxWidth(70);
+            
+            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+            centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+            for(int i = 1; i < table.getColumnCount(); i++) {
+                table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+            }
+
+            // ⭐️ [UI 갱신] 2. 상단 대시보드 카드(AdminNorthPanel) 금액 및 건수 동시 갱신
+            JFrame topFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            if (topFrame != null) {
+                topFrame.getContentPane().removeAll();
+                topFrame.add(new AdminNorthPanel(), BorderLayout.NORTH);
+                topFrame.add(this, BorderLayout.CENTER);
+                topFrame.revalidate();
+                topFrame.repaint();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "상태 변경에 실패했습니다. 다시 시도해주세요.", "오류", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JButton makeStyledButton(String text, Color bg, Color fg) {
