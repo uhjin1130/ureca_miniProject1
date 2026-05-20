@@ -2,12 +2,6 @@ package adminUI;
 
 import java.sql.*;
 
-import adminUI.DBUtil; // 네 프로젝트의 DBUtil 패키지 경로에 맞게 확인!
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 
 public class orderDAO {
 
@@ -128,6 +122,7 @@ public class orderDAO {
                 if ("PENDING".equals(status)) status = "대기";
                 else if ("COOKING".equals(status)) status = "조리중";
                 else if ("COMPLETED".equals(status)) status = "완료";
+                else if ("CANCELED".equals(status)) status = "취소";
 
                 list.add(new Object[]{orderId, orderTime, details, totalPrice, status});
             }
@@ -142,67 +137,39 @@ public class orderDAO {
     /**
      * 특정 주문(orderId)을 DB에서 완전히 삭제합니다.
      */
-    public void deleteOrder(long orderId) {
-        // 자식(상세) 테이블부터 지우고, 부모(마스터) 테이블을 지우는 쿼리
-        String deleteItemsSQL = "DELETE FROM order_items WHERE order_id = ?";
-        String deleteOrderSQL = "DELETE FROM orders WHERE order_id = ?";
+    // public void deleteOrder(long orderId) {
+    //     // 자식(상세) 테이블부터 지우고, 부모(마스터) 테이블을 지우는 쿼리
+    //     String deleteItemsSQL = "DELETE FROM order_items WHERE order_id = ?";
+    //     String deleteOrderSQL = "DELETE FROM orders WHERE order_id = ?";
 
-        // 본인의 DB 연결 코드 방식에 맞춰 Connection을 가져오세요 (예: DBUtil.getConnection())
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "root")) {
+    //     // 본인의 DB 연결 코드 방식에 맞춰 Connection을 가져오세요 (예: DBUtil.getConnection())
+    //     try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "root")) {
 
-            // 트랜잭션 시작: 두 쿼리가 모두 성공해야만 DB에 반영되도록 설정
-            conn.setAutoCommit(false);
+    //         // 트랜잭션 시작: 두 쿼리가 모두 성공해야만 DB에 반영되도록 설정
+    //         conn.setAutoCommit(false);
 
-            try (PreparedStatement pstmtItem = conn.prepareStatement(deleteItemsSQL);
-                 PreparedStatement pstmtOrder = conn.prepareStatement(deleteOrderSQL)) {
+    //         try (PreparedStatement pstmtItem = conn.prepareStatement(deleteItemsSQL);
+    //              PreparedStatement pstmtOrder = conn.prepareStatement(deleteOrderSQL)) {
 
-                // 1. 주문에 엮인 상세 메뉴들(자식) 모두 삭제
-                pstmtItem.setLong(1, orderId);
-                pstmtItem.executeUpdate();
+    //             // 1. 주문에 엮인 상세 메뉴들(자식) 모두 삭제
+    //             pstmtItem.setLong(1, orderId);
+    //             pstmtItem.executeUpdate();
 
-                // 2. 주문 정보(부모) 삭제
-                pstmtOrder.setLong(1, orderId);
-                pstmtOrder.executeUpdate();
+    //             // 2. 주문 정보(부모) 삭제
+    //             pstmtOrder.setLong(1, orderId);
+    //             pstmtOrder.executeUpdate();
 
-                // 여기까지 에러가 없으면 완벽하게 DB 반영
-                conn.commit();
-            } catch (Exception ex) {
-                // 도중에 에러가 나면 롤백(취소)
-                conn.rollback();
-                ex.printStackTrace();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public int[] getMonthlySalesValues() {
-        int[] monthlySales = new int[12]; // 1월부터 12월까지 저장할 배열 공간 생성
-        
-        String sql = "SELECT MONTH(order_time) AS month, SUM(total_price) AS sales " +
-                    "FROM orders " +
-                    "WHERE status = 'COMPLETED' AND YEAR(order_time) = YEAR(CURDATE()) " +
-                    "GROUP BY MONTH(order_time)";
-                    
-        try (Connection conn = DBUtil.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()) {
-            
-            while (rs.next()) {
-                int month = rs.getInt("month"); // DB에서 추출한 월 (1 ~ 12)
-                int sales = rs.getInt("sales"); // 해당 월의 매출 합계
-                
-                // 자바 배열은 0부터 시작하므로 [월 - 1] 인덱스에 매핑하여 저장합니다.
-                monthlySales[month - 1] = sales; 
-            }
-        } catch (SQLException e) {
-            System.out.println(">> 월별 매출 통계 조회 중 DB 에러 발생!");
-            e.printStackTrace();
-        }
-        
-        return monthlySales;
-    }
-
+    //             // 여기까지 에러가 없으면 완벽하게 DB 반영
+    //             conn.commit();
+    //         } catch (Exception ex) {
+    //             // 도중에 에러가 나면 롤백(취소)
+    //             conn.rollback();
+    //             ex.printStackTrace();
+    //         }
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    // }
 
     // ⭐️ [추가] 오늘 자 시간별(0시~23시) 매출 통계 그래프 데이터 가져오기
     public int[] getHourlySalesValues() {
