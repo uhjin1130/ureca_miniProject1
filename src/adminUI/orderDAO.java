@@ -2,12 +2,6 @@ package adminUI;
 
 import java.sql.*;
 
-import adminUI.DBUtil; // 네 프로젝트의 DBUtil 패키지 경로에 맞게 확인!
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 
 public class orderDAO {
 
@@ -148,7 +142,7 @@ public class orderDAO {
         String deleteOrderSQL = "DELETE FROM orders WHERE order_id = ?";
 
         // 본인의 DB 연결 코드 방식에 맞춰 Connection을 가져오세요 (예: DBUtil.getConnection())
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "940913")) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/kingorder", "root", "root")) {
 
             // 트랜잭션 시작: 두 쿼리가 모두 성공해야만 DB에 반영되도록 설정
             conn.setAutoCommit(false);
@@ -175,34 +169,6 @@ public class orderDAO {
             e.printStackTrace();
         }
     }
-
-    public int[] getMonthlySalesValues() {
-        int[] monthlySales = new int[12]; // 1월부터 12월까지 저장할 배열 공간 생성
-        
-        String sql = "SELECT MONTH(order_time) AS month, SUM(total_price) AS sales " +
-                    "FROM orders " +
-                    "WHERE status = 'COMPLETED' AND YEAR(order_time) = YEAR(CURDATE()) " +
-                    "GROUP BY MONTH(order_time)";
-                    
-        try (Connection conn = DBUtil.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()) {
-            
-            while (rs.next()) {
-                int month = rs.getInt("month"); // DB에서 추출한 월 (1 ~ 12)
-                int sales = rs.getInt("sales"); // 해당 월의 매출 합계
-                
-                // 자바 배열은 0부터 시작하므로 [월 - 1] 인덱스에 매핑하여 저장합니다.
-                monthlySales[month - 1] = sales; 
-            }
-        } catch (SQLException e) {
-            System.out.println(">> 월별 매출 통계 조회 중 DB 에러 발생!");
-            e.printStackTrace();
-        }
-        
-        return monthlySales;
-    }
-
 
     // ⭐️ [추가] 오늘 자 시간별(0시~23시) 매출 통계 그래프 데이터 가져오기
     public int[] getHourlySalesValues() {

@@ -1,6 +1,5 @@
 package adminUI;
 
-import javax.swing.Timer;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -248,9 +247,8 @@ public class OrderManagement extends JPanel {
 
             table.getColumnModel().getColumn(0).setPreferredWidth(40);
             table.getColumnModel().getColumn(0).setMaxWidth(40);
-            table.getColumnModel().getColumn(1).setPreferredWidth(70);
-            table.getColumnModel().getColumn(1).setMaxWidth(70);
 
+            
             DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
             centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
             for(int i = 1; i < table.getColumnCount(); i++) {
